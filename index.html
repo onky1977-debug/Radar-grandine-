@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radar Grandine - Rilevatore Rischio Meteo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --color-green: #22c55e;
+      --color-yellow: #eab308;
+      --color-orange: #f97316;
+      --color-red: #ef4444;
+      --border-radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+    body { background-color: var(--bg-primary); color: var(--text-main); min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 16px; }
+    .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 20px; padding-bottom: 40px; }
+    header { text-align: center; padding: 12px 0 4px 0; }
+    .app-title { font-size: 1.65rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .app-title span { background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .app-subtitle { font-size: 0.875rem; color: var(--text-muted); margin-top: 4px; }
+    .card { background-color: var(--bg-card); border-radius: var(--border-radius); padding: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); }
+    .gps-btn { width: 100%; padding: 14px 18px; border-radius: 12px; border: none; background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .divider { display: flex; align-items: center; text-align: center; color: var(--text-muted); font-size: 0.75rem; margin: 16px 0; text-transform: uppercase; letter-spacing: 1px; }
+    .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .divider span { padding: 0 10px; }
+    .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+    .input-group input { background-color: var(--bg-primary); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 12px; color: var(--text-main); font-size: 0.95rem; font-weight: 500; outline: none; }
+    .action-btn { width: 100%; margin-top: 16px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background-color: var(--bg-card-hover); color: var(--text-main); font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    .result-container { display: none; animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .status-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; margin-bottom: 12px; text-transform: uppercase; }
+    .status-verde { background-color: rgba(34, 197, 94, 0.15); color: var(--color-green); border: 1px solid var(--color-green); }
+    .status-giallo { background-color: rgba(234, 179, 8, 0.15); color: var(--color-yellow); border: 1px solid var(--color-yellow); }
+    .status-arancione { background-color: rgba(249, 115, 22, 0.15); color: var(--color-orange); border: 1px solid var(--color-orange); }
+    .status-rosso { background-color: rgba(239, 68, 68, 0.15); color: var(--color-red); border: 1px solid var(--color-red); }
+    .score-box { margin: 16px 0; }
+    .score-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .score-title { font-size: 0.85rem; color: var(--text-muted); }
+    .score-value { font-size: 1.8rem; font-weight: 800; }
+    .progress-bar-bg { height: 10px; background-color: var(--bg-primary); border-radius: 5px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; border-radius: 5px; transition: width 0.8s ease; }
+    .details-title { font-size: 0.85rem; color: var(--text-muted); margin-top: 16px; margin-bottom: 8px; text-transform: uppercase; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .metric-card { background-color: var(--bg-primary); border-radius: 10px; padding: 10px; text-align: center; }
+    .metric-value { font-size: 0.95rem; font-weight: 700; color: var(--accent-blue); margin-top: 2px; }
+    .metric-label { font-size: 0.7rem; color: var(--text-muted); }
+    .notes-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .notes-list li { font-size: 0.85rem; color: #cbd5e1; padding: 8px 12px; background-color: var(--bg-primary); border-radius: 8px; display: flex; align-items: center; gap: 8px; }
+    .notes-list li::before { content: "•"; color: var(--accent-blue); font-weight: bold; }
+    .loading-spinner { display: none; text-align: center; padding: 20px 0; color: var(--text-muted); font-size: 0.9rem; }
+    .location-info { font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="app-title"><span>🛡️ Radar Grandine</span></div>
+      <div class="app-subtitle">Valutazione istantanea del rischio meteorologico</div>
+    </header>
+
+    <div class="card">
+      <button class="gps-btn" id="btn-gps">📍 Rileva Posizione GPS</button>
+      <div class="divider"><span>oppure inserisci</span></div>
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="lat">Latitudine</label>
+          <input type="number" id="lat" value="44.6291" step="0.0001">
+        </div>
+        <div class="input-group">
+          <label for="lon">Longitudine</label>
+          <input type="number" id="lon" value="10.7381" step="0.0001">
+        </div>
+      </div>
+      <button class="action-btn" id="btn-analyze">🔍 Analizza Rischio Meteo</button>
+      <div class="location-info" id="location-text">Coordinate predefinite: Casalgrande (RE)</div>
+    </div>
+
+    <div class="loading-spinner" id="loading">Analisi parametri atmosferici in corso...</div>
+
+    <div class="card result-container" id="results">
+      <div class="status-badge" id="status-badge"><span id="status-text">ANALISI PRONTA</span></div>
+      <div class="score-box">
+        <div class="score-header">
+          <span class="score-title">Punteggio Pericolo</span>
+          <span class="score-value" id="score-text">0/100</span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar"></div></div>
+      </div>
+      <div class="details-title">Parametri Atmosferici Rilevati</div>
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-label">CAPE (Energia)</div><div class="metric-value" id="metric-cape">0 J/kg</div></div>
+        <div class="metric-card"><div class="metric-label">Zero Termico</div><div class="metric-value" id="metric-freezing">0 m</div></div>
+        <div class="metric-card"><div class="metric-label">Vento Quota</div><div class="metric-value" id="metric-wind">0 km/h</div></div>
+      </div>
+      <div class="details-title">Valutazione Dettagliata</div>
+      <ul class="notes-list" id="notes-list"></ul>
+    </div>
+  </div>
+
+  <script>
+    const btnGps = document.getElementById('btn-gps');
+    const btnAnalyze = document.getElementById('btn-analyze');
+    const inputLat = document.getElementById('lat');
+    const inputLon = document.getElementById('lon');
+    const locationText = document.getElementById('location-text');
+    const loadingEl = document.getElementById('loading');
+    const resultsEl = document.getElementById('results');
+    const statusBadge = document.getElementById('status-badge');
+    const statusText = document.getElementById('status-text');
+    const scoreText = document.getElementById('score-text');
+    const progressBar = document.getElementById('progress-bar');
+    const metricCape = document.getElementById('metric-cape');
+    const metricFreezing = document.getElementById('metric-freezing');
+    const metricWind = document.getElementById('metric-wind');
+    const notesList = document.getElementById('notes-list');
+
+    btnGps.addEventListener('click', () => {
+      if ('geolocation' in navigator) {
+        btnGps.textContent = "Rilevamento GPS...";
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude.toFixed(4);
+            const lon = pos.coords.longitude.toFixed(4);
+            inputLat.value = lat; inputLon.value = lon;
+            locationText.textContent = `Posizione GPS: ${lat}, ${lon}`;
+            btnGps.textContent = "📍 Posizione Aggiornata";
+            analyzeRisk(lat, lon);
+          },
+          () => { alert("Attiva la geolocalizzazione sul tuo dispositivo."); btnGps.textContent = "📍 Rileva Posizione GPS"; }
+        );
+      }
+    });
+
+    btnAnalyze.addEventListener('click', () => {
+      analyzeRisk(parseFloat(inputLat.value), parseFloat(inputLon.value));
+    });
+
+    async function analyzeRisk(lat, lon) {
+      loadingEl.style.display = 'block';
+      resultsEl.style.display = 'none';
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cape,freezing_level_height,wind_speed_100m&timezone=auto`);
+        const data = await res.json();
+        const hourly = data.hourly || {};
+        const cape = hourly.cape ? (hourly.cape[0] || 0) : 0;
+        const freezing = hourly.freezing_level_height ? (hourly.freezing_level_height[0] || 3000) : 3000;
+        const wind = hourly.wind_speed_100m ? (hourly.wind_speed_100m[0] || 0) : 0;
+
+        let score = 0, notes = [];
+        if (cape >= 2500) { score += 45; notes.push("CAPE molto alto (> 2500 J/kg): forte energia temporalesca."); }
+        else if (cape >= 1500) { score += 30; notes.push("CAPE elevato (> 1500 J/kg): condizioni instabili."); }
+        else { notes.push("CAPE contenuto: scarsa energia per grandinate."); }
+
+        if (freezing >= 2200 && freezing <= 3400) { score += 35; notes.push("Zero termico ideale per arrivo grandine al suolo."); }
+        else { notes.push("Zero termico fuori fascia di massimo rischio."); }
+
+        if (wind > 35) { score += 20; notes.push("Ventilazione sostenuta in quota."); }
+
+        metricCape.textContent = `${Math.round(cape)} J/kg`;
+        metricFreezing.textContent = `${Math.round(freezing)} m`;
+        metricWind.textContent = `${Math.round(wind)} km/h`;
+        scoreText.textContent = `${score}/100`;
+        progressBar.style.width = `${Math.min(score, 100)}%`;
+
+        statusBadge.className = 'status-badge';
+        if (score >= 70) {
+          statusBadge.classList.add('status-rosso'); statusText.textContent = 'ALLERTA ROSSA - HIGH RISK';
+          progressBar.style.backgroundColor = 'var(--color-red)';
+        } else if (score >= 40) {
+          statusBadge.classList.add('status-arancione'); statusText.textContent = 'ALLERTA ARANCIONE - MODERATE RISK';
+          progressBar.style.backgroundColor = 'var(--color-orange)';
+        } else if (score >= 25) {
+          statusBadge.classList.add('status-giallo'); statusText.textContent = 'ALLERTA GIALLA - ATTENZIONE';
+          progressBar.style.backgroundColor = 'var(--color-yellow)';
+        } else {
+          statusBadge.classList.add('status-verde'); statusText.textContent = 'ALLERTA VERDE - NESSUN RISCHIO';
+          progressBar.style.backgroundColor = 'var(--color-green)';
+        }
+
+        notesList.innerHTML = '';
+        notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; notesList.appendChild(li); });
+        loadingEl.style.display = 'none'; resultsEl.style.display = 'block';
+      } catch (e) {
+        alert("Errore nella connessione ai dati meteo."); loadingEl.style.display = 'none';
+      }
+    }
+    analyzeRisk(44.6291, 10.7381);
+  </script>
+</body>
+</html>
